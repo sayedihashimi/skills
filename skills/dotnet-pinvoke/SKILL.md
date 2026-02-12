@@ -346,6 +346,9 @@ Use `NativeLibrary.SetDllImportResolver` for complex scenarios, or conditional c
 
 ```csharp
 // Simple: conditional compilation
+// WINDOWS, LINUX, MACOS are predefined only when targeting an OS-specific TFM
+// (e.g., net8.0-windows). For portable TFMs (e.g., net8.0), these symbols are
+// not defined — use the runtime resolver approach below instead.
 #if WINDOWS
     private const string LibName = "mylib.dll";
 #elif LINUX
