@@ -1,11 +1,11 @@
 ---
 name: scaffold-generate-aspnet
-description: Generate or scaffold ASP.NET Core code — Razor Pages, Blazor components, MVC controllers, views, and Minimal API endpoints — without CLI tools. Use when (1) adding CRUD pages, views, or API endpoints backed by Entity Framework (EF Core) and a database, (2) generating code to create, read, update, and delete data using a DbContext, (3) scaffolding UI components that match the project's existing CSS framework and coding patterns, or (4) creating data-driven forms, tables, and navigation for a model class. Do not use for non-ASP.NET projects or when CLI-based scaffolding is preferred.
+description: Generate or scaffold ASP.NET Core code — Razor Pages, Blazor components, MVC controllers, views, and Minimal API endpoints — without using ASP.NET Core CLI scaffolding/code-generation tools. Use when (1) adding CRUD pages, views, or API endpoints backed by Entity Framework (EF Core) and a database, (2) generating code to create, read, update, and delete data using a DbContext, (3) scaffolding UI components that match the project's existing CSS framework and coding patterns, or (4) creating data-driven forms, tables, and navigation for a model class. Do not use for non-ASP.NET projects or when CLI-based scaffolding is preferred.
 ---
 
 # Generate or Scaffold ASP.NET Core Code
 
-Generate ASP.NET Core scaffolded code — controllers, views, Razor Pages, Blazor components, Minimal API endpoints. The generated code matches the project's existing CSS framework, layout conventions, and coding patterns. No CLI scaffolding tools are used.
+Generate ASP.NET Core scaffolded code — controllers, views, Razor Pages, Blazor components, Minimal API endpoints. The generated code matches the project's existing CSS framework, layout conventions, and coding patterns. No CLI-based scaffolding/code-generation tools are used; standard `dotnet` CLI commands for build, restore, and migrations are still expected.
 
 ## When to Use
 
