@@ -240,8 +240,10 @@ public static class AgentRunner
 
         // Build additional noise skill directories when noise testing is active.
         // For additional skills we stage a temp directory with copies of each
-        // skill's SKILL.md so the SDK discovers exactly those skills — not
+        // skill's content so the SDK discovers exactly those skills — not
         // every sibling that happens to share the same parent directory.
+        // We copy the full directory tree (references/, scripts/, etc.) so that
+        // relative links inside SKILL.md continue to resolve.
         var noiseDirs = new List<string>();
         if (additionalSkills is { Count: > 0 })
         {
@@ -256,8 +258,7 @@ public static class AgentRunner
                     continue;
 
                 var stagedSkillDir = Path.Combine(stageDir, Path.GetFileName(s.Path));
-                Directory.CreateDirectory(stagedSkillDir);
-                File.Copy(skillMdPath, Path.Combine(stagedSkillDir, "SKILL.md"));
+                CopyDirectory(s.Path, stagedSkillDir);
             }
 
             noiseDirs.Add(stageDir);
@@ -325,12 +326,20 @@ public static class AgentRunner
         {
             // Stage the single skill into a temp directory so the SDK discovers
             // only this skill — not every sibling that shares the same parent.
+            // Copy the full directory tree (references/, scripts/, etc.) so that
+            // relative links inside SKILL.md continue to resolve.
             var isoStageDir = Path.Combine(Path.GetTempPath(), $"sv-iso-{Guid.NewGuid():N}");
             Directory.CreateDirectory(isoStageDir);
             _workDirs.Add(isoStageDir);
 
             var stagedSkillDir = Path.Combine(isoStageDir, Path.GetFileName(skill.Path));
-            Directory.CreateDirectory(stagedSkillDir);
+            if (Directory.Exists(skill.Path))
+                CopyDirectory(skill.Path, stagedSkillDir);
+            else
+                Directory.CreateDirectory(stagedSkillDir);
+
+            // Always write SKILL.md from the in-memory content (may differ from
+            // the on-disk version when the validator applies transformations).
             File.WriteAllText(Path.Combine(stagedSkillDir, "SKILL.md"), skill.SkillMdContent);
 
             skillDirs = [isoStageDir];
@@ -338,6 +347,32 @@ public static class AgentRunner
         else
         {
             skillDirs = [];
+        }
+
+        // Precompute the additional allowed directories once so we don't
+        // allocate on every permission request (the set is fixed per session).
+        var additionalAllowedDirs = skillDirs
+            .Concat(noiseDirs)
+            .Where(d => !string.IsNullOrEmpty(d))
+            .ToList();
+
+        // In isolated runs the agent should only access the staged copies, not
+        // the original skill tree (which includes sibling skills).  Pass null
+        // for skillPath so the original location is NOT in the allowlist.
+        // In plugin mode, validate that skillPath is under pluginRoot before
+        // allowlisting it; otherwise fall back to pluginRoot coverage alone.
+        string? effectiveSkillPath = null;
+        if (pluginRoot is not null && skillPath is not null)
+        {
+            var normalizedSkill = Path.GetFullPath(skillPath);
+            var normalizedPlugin = Path.GetFullPath(pluginRoot);
+            if (!Path.EndsInDirectorySeparator(normalizedPlugin))
+                normalizedPlugin += Path.DirectorySeparatorChar;
+            var cmp = OperatingSystem.IsWindows()
+                ? StringComparison.OrdinalIgnoreCase
+                : StringComparison.Ordinal;
+            if (normalizedSkill.StartsWith(normalizedPlugin, cmp))
+                effectiveSkillPath = skillPath;
         }
 
         return new SessionConfig
@@ -352,7 +387,7 @@ public static class AgentRunner
             OnPermissionRequest = (request, _) =>
             {
                 var runLabel = skill is not null ? "skilled" : "baseline";
-                var result = CheckPermission(request, workDir, skillPath, verbose ? log : null, runLabel, pluginRoot);
+                var result = CheckPermission(request, workDir, effectiveSkillPath, verbose ? log : null, runLabel, pluginRoot, additionalAllowedDirs);
                 return Task.FromResult(new PermissionRequestResult
                 {
                     Kind = result ? PermissionRequestResultKind.Approved : PermissionRequestResultKind.DeniedByRules,
@@ -833,12 +868,53 @@ public static class AgentRunner
         return args;
     }
 
+    /// <summary>
+    /// Recursively copies a directory tree, skipping symlinks and reparse
+    /// points so that staging cannot pull in content from outside the
+    /// source root.
+    /// </summary>
     private static void CopyDirectory(string source, string destination)
     {
+        var sourceRoot = Path.GetFullPath(source);
+        if (!Path.EndsInDirectorySeparator(sourceRoot))
+            sourceRoot += Path.DirectorySeparatorChar;
+        CopyDirectoryCore(source, destination, sourceRoot);
+    }
+
+    private static void CopyDirectoryCore(string source, string destination, string sourceRoot)
+    {
         Directory.CreateDirectory(destination);
-        foreach (var file in Directory.GetFiles(source))
-            File.Copy(file, Path.Combine(destination, Path.GetFileName(file)), true);
-        foreach (var dir in Directory.GetDirectories(source))
-            CopyDirectory(dir, Path.Combine(destination, Path.GetFileName(dir)));
+
+        foreach (var entry in Directory.EnumerateFileSystemEntries(source))
+        {
+            var attributes = File.GetAttributes(entry);
+
+            // Skip symlinks / reparse points to avoid copying data outside the skill tree.
+            if ((attributes & FileAttributes.ReparsePoint) != 0)
+                continue;
+
+            var name = Path.GetFileName(entry);
+            var destPath = Path.Combine(destination, name);
+
+            if ((attributes & FileAttributes.Directory) != 0)
+            {
+                var entryFull = Path.GetFullPath(entry);
+                if (!Path.EndsInDirectorySeparator(entryFull))
+                    entryFull += Path.DirectorySeparatorChar;
+
+                // Guard against junctions that resolve outside the source root.
+                var pathComparison = OperatingSystem.IsWindows()
+                    ? StringComparison.OrdinalIgnoreCase
+                    : StringComparison.Ordinal;
+                if (!entryFull.StartsWith(sourceRoot, pathComparison))
+                    continue;
+
+                CopyDirectoryCore(entryFull.TrimEnd(Path.DirectorySeparatorChar), destPath, sourceRoot);
+            }
+            else
+            {
+                File.Copy(entry, destPath, overwrite: true);
+            }
+        }
     }
 }
