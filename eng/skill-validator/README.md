@@ -43,12 +43,45 @@ dnx Microsoft.DotNet.SkillValidator --source ./path/to/downloaded/ evaluate --te
 
 ## Usage
 
-The tool has two main subcommands:
+The tool has several subcommands:
 
-- **`check`** — Static analysis of skills, plugins, and agents (no LLM, no token required)
 - **`evaluate`** — LLM-based evaluation testing (requires a Copilot token)
+- **`check`** — Static analysis of skills, plugins, and agents (no LLM, no token required)
+- **`consolidate`** — Merge results from matrix jobs into a single summary
+- **`rejudge`** — Re-run judging on previously saved sessions
 
 All examples below use the `skill-validator` binary directly. If running from source, replace `skill-validator` with `dotnet run --project eng/skill-validator/src --`:
+
+### LLM evaluation (`evaluate`)
+
+```bash
+# Show evaluate help
+skill-validator evaluate --help
+
+# Evaluate a skill (--tests-dir is required)
+skill-validator evaluate --tests-dir ./tests/my-plugin ./plugins/my-plugin/skills/my-skill
+
+# Verbose output with per-scenario breakdowns
+skill-validator evaluate --verbose --tests-dir ./tests/my-plugin ./plugins/my-plugin/skills
+
+# Custom model and threshold
+skill-validator evaluate --model claude-sonnet-4.5 --min-improvement 0.2 --tests-dir ./tests/my-plugin ./plugins/my-plugin/skills
+
+# Use a different model for judging vs agent runs
+skill-validator evaluate --model gpt-5.3-codex --judge-model claude-opus-4.6-fast --tests-dir ./tests/my-plugin ./plugins/my-plugin/skills
+
+# Multiple runs for stability
+skill-validator evaluate --runs 5 --tests-dir ./tests/my-plugin ./plugins/my-plugin/skills
+
+# Override the default results directory (.skill-validator-results)
+skill-validator evaluate --results-dir ./my-results --tests-dir ./tests/my-plugin ./plugins/my-plugin/skills
+
+# File reporters can also be specified explicitly.
+skill-validator evaluate --reporter junit --tests-dir ./tests/my-plugin ./plugins/my-plugin/skills
+
+# Verdict-warn-only mode (verdict failures return exit 0, execution errors still fail)
+skill-validator evaluate --verdict-warn-only --tests-dir ./tests/my-plugin ./plugins/my-plugin/skills
+```
 
 ### Static analysis (`check`)
 
@@ -69,41 +102,10 @@ skill-validator check --skills ./plugins/my-plugin/skills
 skill-validator check --agents ./plugins/my-plugin/agents
 
 # Check with external dependency allow list
-skill-validator check --plugin ./plugins/my-plugin --allowed-external-deps ./eng/skill-validator/allowed-external-deps.txt
+skill-validator check --plugin ./plugins/my-plugin --allowed-external-deps ./eng/allowed-external-deps.txt
 
 # Verbose output
 skill-validator check --verbose --plugin ./plugins/my-plugin
-```
-
-### LLM evaluation (`evaluate`)
-
-```bash
-# Show evaluate help
-skill-validator --help
-
-# Evaluate a skill (--tests-dir is required)
-skill-validator --tests-dir ./tests/my-plugin ./plugins/my-plugin/skills/my-skill
-
-# Verbose output with per-scenario breakdowns
-skill-validator --verbose --tests-dir ./tests/my-plugin ./plugins/my-plugin/skills
-
-# Custom model and threshold
-skill-validator --model claude-sonnet-4.5 --min-improvement 0.2 --tests-dir ./tests/my-plugin ./plugins/my-plugin/skills
-
-# Use a different model for judging vs agent runs
-skill-validator --model gpt-5.3-codex --judge-model claude-opus-4.6-fast --tests-dir ./tests/my-plugin ./plugins/my-plugin/skills
-
-# Multiple runs for stability
-skill-validator --runs 5 --tests-dir ./tests/my-plugin ./plugins/my-plugin/skills
-
-# Override the default results directory (.skill-validator-results)
-skill-validator --results-dir ./my-results --tests-dir ./tests/my-plugin ./plugins/my-plugin/skills
-
-# File reporters can also be specified explicitly.
-skill-validator --reporter junit --tests-dir ./tests/my-plugin ./plugins/my-plugin/skills
-
-# Verdict-warn-only mode (verdict failures return exit 0, execution errors still fail)
-skill-validator --verdict-warn-only --tests-dir ./tests/my-plugin ./plugins/my-plugin/skills
 ```
 
 ## `check` flags
@@ -114,6 +116,7 @@ skill-validator --verdict-warn-only --tests-dir ./tests/my-plugin ./plugins/my-p
 | `--skills <paths...>` | | Skill directories to check (skills only) |
 | `--agents <paths...>` | | Agent directories to check (agents only) |
 | `--allowed-external-deps <path>` | *(none)* | Path to allowed-external-deps.txt; when omitted the external-deps check is skipped |
+| `--known-domains <path>` | *(none)* | Path to known-domains.txt for reference scanning; when omitted the reference scan is skipped |
 | `--verbose` | `false` | Show detailed output |
 
 > Exactly one of `--plugin`, `--skills`, or `--agents` must be provided.
@@ -129,9 +132,9 @@ skill-validator --verdict-warn-only --tests-dir ./tests/my-plugin ./plugins/my-p
 | `--judge-mode <mode>` | `pairwise` | Judge mode: `pairwise`, `independent`, or `both` |
 | `--min-improvement <n>` | `0.1` | Minimum improvement score (0–1) |
 | `--runs <n>` | `5` | Runs per scenario (averaged for stability) |
-| `--parallel-skills <n>` | `1` | Max concurrent skills to evaluate |
-| `--parallel-scenarios <n>` | `1` | Max concurrent scenarios per skill |
-| `--parallel-runs <n>` | `1` | Max concurrent runs per scenario |
+| `--parallel-skills <n>` | `3` | Max concurrent skills to evaluate |
+| `--parallel-scenarios <n>` | `3` | Max concurrent scenarios per skill |
+| `--parallel-runs <n>` | `3` | Max concurrent runs per scenario |
 | `--confidence-level <n>` | `0.95` | Confidence level for statistical intervals (0–1) |
 | `--judge-timeout <n>` | `300` | Judge LLM timeout in seconds |
 | `--require-completion` | `true` | Fail if skill regresses task completion |
@@ -151,6 +154,8 @@ Results are displayed in the console with color-coded scores and metric deltas. 
 - `json` — `results.json` with model, timestamp, and all verdicts
 - `junit` — `results.xml` with JUnit XML test results
 - `markdown` — `summary.md` with a results table, plus per-skill directories with per-scenario judge reports
+
+See [Investigating Results](InvestigatingResults.md) for how to diagnose poor scores, download artifacts, and interpret `results.json`.
 
 ### Consolidating results across matrix jobs
 
@@ -172,6 +177,29 @@ skill-validator consolidate --output summary.md $(find ./all-results/ -name resu
 
 Each skill can include a `tests/eval.yaml`:
 
+### Per-eval configuration
+
+An optional top-level `config` section lets you override parallelism settings for a specific eval file. This is useful for resource-intensive evaluations (e.g., skills that spawn heavy child processes like ML.NET model training) where the default concurrency would exceed runner memory limits.
+
+```yaml
+config:
+  max_parallel_scenarios: 1   # cap concurrent scenarios (default: use CLI value)
+  max_parallel_runs: 2        # cap concurrent runs per scenario (default: use CLI value)
+
+scenarios:
+  - name: "Heavy scenario"
+    prompt: "..."
+```
+
+| Setting | Type | Description |
+|---------|------|-------------|
+| `max_parallel_scenarios` | `int` (optional) | Maximum concurrent scenarios for this eval. The effective value is `min(--parallel-scenarios, this value)`. |
+| `max_parallel_runs` | `int` (optional) | Maximum concurrent runs per scenario for this eval. The effective value is `min(--parallel-runs, this value)`. |
+
+Both settings are optional. When omitted, the CLI defaults (`--parallel-scenarios`, `--parallel-runs`) apply unchanged. The override can only *reduce* parallelism (via `Math.Min`), never increase it beyond the CLI value.
+
+### Scenarios
+
 ```yaml
 scenarios:
   - name: "Descriptive name of the scenario"
@@ -183,6 +211,10 @@ scenarios:
           content: "file content to create before the run"
         - path: "data.csv"
           source: "fixtures/sample-data.csv"  # relative to skill dir
+      additional_required_skills:       # skills needed by the target in isolated runs
+        - binlog-failure-analysis
+      additional_required_agents:        # agents needed by the target in isolated runs
+        - build-perf
     assertions:
       - type: "output_contains"
         value: "expected text"
@@ -228,6 +260,9 @@ scenarios:
 |--------|-------------|
 | `copy_test_files` | When `true`, copies all files from the eval directory (except `eval.yaml`) into the agent working directory before each run. Useful when test fixtures live alongside the eval file. |
 | `files` | Explicit list of files to create in the working directory. Each entry has a `path` and either inline `content` or a `source` path (relative to the skill directory). Applied after `copy_test_files`. |
+| `commands` | Shell commands to run in the work directory before the agent starts (e.g. `dotnet build -bl:build.binlog`). |
+| `additional_required_skills` | List of skill names (from the same plugin) to load in the **isolated** run alongside the target. Useful when an agent routes to specific skills or a skill depends on sibling skills. Does not affect baseline (nothing loaded) or plugin (everything loaded) runs. |
+| `additional_required_agents` | List of agent names (from the same plugin) to register in the **isolated** run alongside the target. Same semantics as `additional_required_skills` but for agents. |
 
 ### Scenario constraints
 
