@@ -142,8 +142,8 @@ Skip this step for non-API scaffolders.
 3. Every request must target the correct URL path matching an actual mapped endpoint
 4. Request labels must accurately describe the action (e.g., "Create a category" must POST to the categories endpoint)
 5. Order requests by dependency: create parent entities before child entities
-6. POST payloads for child entities MUST use foreign key values matching IDs from parent entity creation requests
-7. Do NOT use placeholder or assumed FK values
+6. When possible, capture IDs from parent creation responses using your HTTP client's variable/templating features and reuse them as foreign key values in child-entity POST payloads
+7. If your client cannot capture response values, add comments indicating which FK IDs must be updated after running the parent creation requests; do not leave unrealistic placeholder or assumed FK values that do not correspond to actual parent records when executing the requests
 
 ### Step 7: Verify
 
