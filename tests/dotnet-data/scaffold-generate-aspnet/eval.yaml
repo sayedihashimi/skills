@@ -27,13 +27,13 @@ scenarios:
       copy_test_files: true
     assertions:
       - type: "file_exists"
-        path: "**/*TodoEndpoints*.cs"
+        path: "fixtures/minimal-api/**/*TodoEndpoints*.cs"
       - type: "file_exists"
-        path: "**/*TodoDbContext*.cs"
+        path: "fixtures/minimal-api/**/*TodoDbContext*.cs"
       - type: "file_exists"
-        path: "**/Migrations/*"
+        path: "fixtures/minimal-api/**/Migrations/*"
       - type: "file_exists"
-        path: "**/*.http"
+        path: "fixtures/minimal-api/**/*.http"
     rubric:
       - "Creates a TodoEndpoints class with MapGet, MapPost, MapPut, and MapDelete endpoints for TodoItem"
       - "Creates a TodoDbContext with a DbSet for TodoItem"
