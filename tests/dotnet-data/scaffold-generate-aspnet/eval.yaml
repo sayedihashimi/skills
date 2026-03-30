@@ -31,6 +31,8 @@ scenarios:
       - type: "file_exists"
         path: "**/*TodoDbContext*.cs"
       - type: "file_exists"
+        path: "**/Migrations/*"
+      - type: "file_exists"
         path: "**/*.http"
     rubric:
       - "Creates a TodoEndpoints class with MapGet, MapPost, MapPut, and MapDelete endpoints for TodoItem"
