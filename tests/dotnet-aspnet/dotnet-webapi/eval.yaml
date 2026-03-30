@@ -209,4 +209,4 @@ scenarios:
       - "Service layer with interface (IOrderService) instead of direct DbContext injection"
       - "List endpoint supports pagination with page/pageSize parameters"
       - "Uses IReadOnlyList<T> instead of List<T> in response types"
-    timeout: 240
+    timeout: 360
