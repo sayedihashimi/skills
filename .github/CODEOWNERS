@@ -83,8 +83,8 @@
 /plugins/dotnet-data/skills/optimizing-ef-core-queries/ @dotnet/efteam
 /tests/dotnet-data/optimizing-ef-core-queries/ @dotnet/efteam
 
-/plugins/dotnet-data/skills/scaffold-generate-aspnet/ @dotnet/efteam
-/tests/dotnet-data/scaffold-generate-aspnet/ @dotnet/efteam
+/plugins/dotnet-data/skills/scaffold-generate-aspnet/ @sayedihashimi @JakeRadMSFT
+/tests/dotnet-data/scaffold-generate-aspnet/ @sayedihashimi @JakeRadMSFT
 
 # dotnet-test (everything testing related)
 /plugins/dotnet-test/ @dotnet/dotnet-testing
