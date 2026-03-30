@@ -51,9 +51,9 @@ scenarios:
       copy_test_files: true
     assertions:
       - type: "file_exists"
-        path: "**/Data/*DbContext*.cs"
+        path: "fixtures/blazor-crud/**/Data/*DbContext*.cs"
       - type: "file_exists"
-        path: "**/Migrations/*"
+        path: "fixtures/blazor-crud/**/Migrations/*"
     rubric:
       - "Generates Blazor components (.razor) for the Employee model with Create, Read, Update, Delete functionality"
       - "Creates an AppDbContext with DbSet properties for Employee"
