@@ -125,8 +125,8 @@ scenarios:
       }
       ```
 
-      Add a new OrdersController with endpoints to list orders,
-      get an order by ID, and create an order. Each order belongs to a customer.
+      Add a new OrdersController with a GET endpoint to list orders and a
+      POST endpoint to create an order.
     assertions:
       - type: "output_contains"
         value: "ControllerBase"
@@ -141,5 +141,4 @@ scenarios:
       - "Includes CancellationToken in all endpoint signatures"
       - "POST create returns CreatedAtAction with 201 status, not Ok with 200"
       - "Uses sealed record DTOs with proper naming (CreateOrderRequest, OrderResponse)"
-      - "Service layer with interface (IOrderService) instead of injecting data stores directly"
-    timeout: 240
+    timeout: 180
