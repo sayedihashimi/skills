@@ -142,6 +142,6 @@ scenarios:
       - "Includes CancellationToken in all endpoint signatures"
       - "POST create returns CreatedAtAction with 201 status, not Ok with 200"
       - "Uses sealed record DTOs with proper naming (CreateOrderRequest, OrderResponse)"
-      - "Service layer with interface (IOrderService) instead of direct DbContext injection"
+      - "Service layer with interface (IOrderService) instead of injecting data stores directly"
       - "List endpoint supports pagination with page/pageSize parameters"
     timeout: 240
