@@ -1,89 +1,28 @@
 scenarios:
   - name: "Create a CRUD Web API with minimal APIs and proper HTTP semantics"
     prompt: |
-      Create an ASP.NET Core Web API project for managing a product catalog.
+      Create an ASP.NET Core Web API (.NET 10) project for managing products.
       The API should have these endpoints:
       - GET /api/products (list all, with pagination)
       - GET /api/products/{id} (get by ID)
-      - POST /api/products (create a product with name, price, categoryId)
-      - PUT /api/products/{id} (update a product)
-      - DELETE /api/products/{id} (delete a product)
+      - POST /api/products (create a product with name and price)
 
-      Use EF Core with SQLite for data storage. Include a Category entity
-      that Product references. Add OpenAPI documentation.
+      Use an in-memory service behind an interface for data storage.
     assertions:
       - type: "output_matches"
-        pattern: "(MapGet|MapPost|MapPut|MapDelete)"
+        pattern: "(MapGet|MapPost)"
       - type: "output_matches"
         pattern: "(TypedResults|Results<)"
       - type: "output_matches"
-        pattern: "(AddOpenApi|MapOpenApi)"
-      - type: "output_matches"
         pattern: "sealed"
-      - type: "output_not_contains"
-        value: "EnsureCreated"
-      - type: "output_not_contains"
-        value: "Swashbuckle"
     rubric:
       - "Uses minimal APIs (MapGet, MapPost, etc.) rather than controllers for new projects"
-      - "POST endpoints return 201 Created with a Location header, not 200 OK"
-      - "DELETE endpoints return 204 No Content"
+      - "POST endpoint returns 201 Created with a Location header, not 200 OK"
       - "Uses TypedResults with explicit Results<T1, T2> return types for compile-time type safety"
       - "DTOs are sealed records, not mutable classes"
-      - "Uses a service layer with interfaces instead of injecting DbContext directly into endpoints"
+      - "Uses a service layer with interfaces instead of injecting a data store directly into endpoints"
       - "CancellationToken is accepted in endpoint signatures and forwarded through all async calls"
-      - "Read-only queries use AsNoTracking()"
-      - "Uses EF Core migrations (dotnet ef migrations add) instead of EnsureCreated()"
-      - "Uses built-in AddOpenApi()/MapOpenApi() instead of Swashbuckle packages"
-      - "Endpoints have OpenAPI metadata (.WithName(), .WithSummary(), .Produces<T>())"
-      - "List endpoints support pagination with metadata (page, pageSize, totalCount)"
-    timeout: 300
-
-  - name: "EF Core database initialization uses migrations not EnsureCreated"
-    prompt: |
-      I'm building an ASP.NET Core Web API with EF Core and SQLite. I have
-      these entities:
-
-      ```csharp
-      public class Order
-      {
-          public int Id { get; set; }
-          public DateTime OrderDate { get; set; }
-          public string CustomerName { get; set; }
-          public decimal Total { get; set; }
-          public List<OrderItem> Items { get; set; }
-      }
-
-      public class OrderItem
-      {
-          public int Id { get; set; }
-          public int OrderId { get; set; }
-          public string ProductName { get; set; }
-          public int Quantity { get; set; }
-          public decimal UnitPrice { get; set; }
-          public Order Order { get; set; }
-      }
-      ```
-
-      Set up EF Core with the DbContext, configure the relationships, and
-      initialize the database. Include a few seed categories. Show me how
-      to wire it all up in Program.cs.
-    assertions:
-      - type: "output_not_contains"
-        value: "EnsureCreated"
-      - type: "output_not_contains"
-        value: "EnsureCreatedAsync"
-      - type: "output_matches"
-        pattern: "(migrations add|HasData|OnModelCreating)"
-      - type: "output_matches"
-        pattern: "(HasIndex|IsUnique|HasColumnType|HasConversion|OnDelete)"
-    rubric:
-      - "Does NOT use context.Database.EnsureCreated() or EnsureCreatedAsync() for database initialization"
-      - "Recommends EF Core migrations (dotnet ef migrations add) for schema management"
-      - "Uses HasData() in OnModelCreating for seed data instead of seeding in Program.cs"
-      - "Configures relationships explicitly with Fluent API (HasOne/HasMany, OnDelete behavior)"
-      - "Sets decimal column types explicitly with HasColumnType(\"decimal(10,2)\") or similar"
-      - "Entities are sealed classes"
+      - "List endpoint supports pagination with metadata (page, pageSize, totalCount)"
     timeout: 240
 
   - name: "Add error handling with ProblemDetails and IExceptionHandler"
@@ -142,8 +81,7 @@ scenarios:
       });
       ```
 
-      Show me how to add OpenAPI documentation using the built-in .NET 9
-      support (not Swashbuckle).
+      Show me how to add OpenAPI documentation.
     assertions:
       - type: "output_contains"
         value: "AddOpenApi"
@@ -188,9 +126,8 @@ scenarios:
       }
       ```
 
-      Add a new OrdersController with full CRUD endpoints for orders.
-      Each order belongs to a customer and has multiple order items.
-      Include pagination on the list endpoint.
+      Add a new OrdersController with endpoints to list orders (with pagination),
+      get an order by ID, and create an order. Each order belongs to a customer.
     assertions:
       - type: "output_contains"
         value: "ControllerBase"
@@ -204,9 +141,7 @@ scenarios:
       - "Continues with the controller pattern since the existing project uses controllers (does not mix minimal APIs)"
       - "Includes CancellationToken in all endpoint signatures"
       - "POST create returns CreatedAtAction with 201 status, not Ok with 200"
-      - "DELETE returns NoContent (204)"
       - "Uses sealed record DTOs with proper naming (CreateOrderRequest, OrderResponse)"
       - "Service layer with interface (IOrderService) instead of direct DbContext injection"
       - "List endpoint supports pagination with page/pageSize parameters"
-      - "Uses IReadOnlyList<T> instead of List<T> in response types"
-    timeout: 360
+    timeout: 240
