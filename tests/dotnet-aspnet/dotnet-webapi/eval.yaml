@@ -3,7 +3,7 @@ scenarios:
     prompt: |
       Create an ASP.NET Core Web API (.NET 10) project for managing products.
       The API should have these endpoints:
-      - GET /api/products (list all, with pagination)
+      - GET /api/products (list all)
       - GET /api/products/{id} (get by ID)
       - POST /api/products (create a product with name and price)
 
@@ -22,7 +22,6 @@ scenarios:
       - "DTOs are sealed records, not mutable classes"
       - "Uses a service layer with interfaces instead of injecting a data store directly into endpoints"
       - "CancellationToken is accepted in endpoint signatures and forwarded through all async calls"
-      - "List endpoint supports pagination with metadata (page, pageSize, totalCount)"
     timeout: 240
 
   - name: "Add error handling with ProblemDetails and IExceptionHandler"
@@ -126,7 +125,7 @@ scenarios:
       }
       ```
 
-      Add a new OrdersController with endpoints to list orders (with pagination),
+      Add a new OrdersController with endpoints to list orders,
       get an order by ID, and create an order. Each order belongs to a customer.
     assertions:
       - type: "output_contains"
@@ -143,5 +142,4 @@ scenarios:
       - "POST create returns CreatedAtAction with 201 status, not Ok with 200"
       - "Uses sealed record DTOs with proper naming (CreateOrderRequest, OrderResponse)"
       - "Service layer with interface (IOrderService) instead of injecting data stores directly"
-      - "List endpoint supports pagination with page/pageSize parameters"
     timeout: 240

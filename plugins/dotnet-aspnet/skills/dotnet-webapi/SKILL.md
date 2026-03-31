@@ -4,8 +4,8 @@ description: >
   Guides creation and modification of ASP.NET Core Web API endpoints with
   correct HTTP semantics, OpenAPI metadata, and error handling.
   USE FOR: adding new API endpoints (controllers or minimal APIs), wiring up
-  OpenAPI/Swagger, creating .http test files, adding pagination/filtering/sorting
-  to list endpoints, setting up global error handling middleware.
+  OpenAPI/Swagger, creating .http test files, setting up global error handling
+  middleware.
   DO NOT USE FOR: general C# coding style (use dotnet-csharp), EF Core data
   access or query optimization (use optimizing-ef-core-queries), frontend/Blazor
   work, gRPC services, or SignalR hubs.
@@ -47,7 +47,7 @@ inheritance and enable JIT devirtualization (CA1852).
 | Input (create) | `Create{Entity}Request` | `CreateProductRequest` |
 | Input (update) | `Update{Entity}Request` | `UpdateProductRequest` |
 | Output (single) | `{Entity}Response` | `ProductResponse` |
-| Output (list) | `{Entity}ListResponse` or paginated wrapper | `ProductListResponse` |
+| Output (list) | `{Entity}ListResponse` | `ProductListResponse` |
 
 **Response DTOs** — use positional sealed records for concise, immutable output:
 
@@ -154,45 +154,6 @@ app.MapGet("/api/products/{id}", async Task<Results<Ok<ProductResponse>, NotFoun
 });
 ```
 
-**Pagination:** For any endpoint that returns a list of items, support
-pagination with query parameters. Return metadata so the client knows
-how to navigate.
-
-Use a `sealed record` for the paginated wrapper with `IReadOnlyList<T>` to
-signal immutability:
-
-```csharp
-public sealed record PaginatedResponse<T>
-{
-    public required IReadOnlyList<T> Items { get; init; }
-    public required int Page { get; init; }
-    public required int PageSize { get; init; }
-    public required int TotalCount { get; init; }
-    public required int TotalPages { get; init; }
-    public required bool HasNextPage { get; init; }
-    public required bool HasPreviousPage { get; init; }
-
-    public static PaginatedResponse<T> Create(
-        IReadOnlyList<T> items, int page, int pageSize, int totalCount)
-    {
-        var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
-        return new PaginatedResponse<T>
-        {
-            Items = items,
-            Page = page,
-            PageSize = pageSize,
-            TotalCount = totalCount,
-            TotalPages = totalPages,
-            HasNextPage = page < totalPages,
-            HasPreviousPage = page > 1
-        };
-    }
-}
-```
-
-Enforce a sensible default page size (e.g., 20) and a maximum (e.g., 100)
-to prevent clients from requesting unbounded result sets.
-
 ### Step 4: Wire up OpenAPI
 
 Every ASP.NET Core Web API should have OpenAPI documentation. Check whether
@@ -204,9 +165,10 @@ This is all that is needed — no additional packages required.
 
 **Do NOT add any `Swashbuckle.*` NuGet package** (`Swashbuckle.AspNetCore`,
 `Swashbuckle.AspNetCore.SwaggerUI`, `Swashbuckle.AspNetCore.SwaggerGen`,
-etc.) to projects that don't already use it. Swashbuckle has known
-compatibility issues with .NET 9+ and .NET 10 OpenAPI types. If the project
-already has Swashbuckle installed, keep it unless the user asks to remove it.
+etc.) to .NET 9+ projects. Swashbuckle has known compatibility issues with
+.NET 9+ and .NET 10 OpenAPI types. For projects targeting .NET 8 or earlier,
+Swashbuckle is acceptable. If the project already has Swashbuckle installed,
+keep it unless the user asks to remove it.
 
 Reference: https://learn.microsoft.com/en-us/aspnet/core/fundamentals/openapi/overview
 
@@ -310,8 +272,7 @@ mocks and follows the Dependency Inversion Principle:
 // Services/IProductService.cs
 public interface IProductService
 {
-    Task<PaginatedResponse<ProductResponse>> GetAllAsync(
-        string? search, int page, int pageSize, CancellationToken ct);
+    Task<IReadOnlyList<ProductResponse>> GetAllAsync(CancellationToken ct);
     Task<ProductResponse?> GetByIdAsync(int id, CancellationToken ct);
     Task<ProductResponse> CreateAsync(CreateProductRequest request, CancellationToken ct);
 }
@@ -342,8 +303,8 @@ documentation and a quick manual test harness.
 ```http
 @baseUrl = http://localhost:5000
 
-### Get all products (paginated)
-GET {{baseUrl}}/api/products?page=1&pageSize=10
+### Get all products
+GET {{baseUrl}}/api/products
 
 ### Get product by ID
 GET {{baseUrl}}/api/products/1
@@ -382,7 +343,6 @@ paths (e.g., non-existent IDs). Match the port to `launchSettings.json`.
 - [ ] Endpoints have summary/description metadata for OpenAPI
 - [ ] Enum values appear as strings in JSON responses and OpenAPI schemas
 - [ ] Error responses use RFC 7807 Problem Details format
-- [ ] List endpoints support pagination with metadata in the response
 - [ ] Domain entities are not exposed directly in API request/response bodies
 - [ ] A `.http` file exists with a request for every new endpoint
 - [ ] `dotnet build` passes with zero errors and zero warnings
@@ -400,7 +360,6 @@ paths (e.g., non-existent IDs). Match the port to `launchSettings.json`.
 | Returning `200 OK` from POST create | Return `201 Created` with a `Location` header. |
 | Missing OpenAPI metadata | Chain `.WithName()`, `.WithSummary()`, `.WithDescription()`, `.Produces<T>()` on every endpoint. |
 | Injecting data stores directly into endpoints | Use a service layer with an interface for separation and testability. |
-| Returning unbounded lists | Always paginate. Default 20, max 100. |
 | Mixing controller and minimal API styles | Pick one per project and be consistent. |
 | `TypedResults` in ternary without explicit return type | `Ok<T>` and `NotFound` have no common base — annotate with `Task<Results<Ok<T>, NotFound>>` or fall back to `Results` factory. |
 | Using mutable classes for DTOs | Use `sealed record` with positional syntax (responses) or `init` properties (requests). |
