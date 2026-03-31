@@ -329,7 +329,7 @@ paths (e.g., non-existent IDs). Match the port to `launchSettings.json`.
 ### Step 8: Build and verify
 
 1. Run `dotnet build` — confirm zero errors and zero warnings.
-2. Start the app and verify the OpenAPI document loads at `/openapi/v1.json`.
+2. Start the app and verify the OpenAPI document loads (default: `/openapi/v1.json`).
 3. Run the requests in the `.http` file and confirm correct status codes.
 
 ## Validation
