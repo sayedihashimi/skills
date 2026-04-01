@@ -479,7 +479,7 @@ jobs:
 
       - name: Cache validator archive
         id: cache-validator
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v4
         with:
           path: skill-validator-dist.tar.gz
           key: ${{ steps.compute-key.outputs.cache-key }}
@@ -538,7 +538,7 @@ jobs:
 
       - name: Restore cached validator
         id: cache-validator
-        uses: actions/cache/restore@5a3ec84eff668545956fd18022155c47e93e2684 # v4
+        uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v4
         with:
           path: skill-validator-dist.tar.gz
           key: ${{ needs.build-validator.outputs.cache-key }}
@@ -657,7 +657,7 @@ jobs:
       - name: Restore cached validator
         if: needs.evaluate.result != 'skipped'
         id: cache-validator
-        uses: actions/cache/restore@5a3ec84eff668545956fd18022155c47e93e2684 # v4
+        uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v4
         with:
           path: skill-validator-dist.tar.gz
           key: ${{ needs.build-validator.outputs.cache-key }}
