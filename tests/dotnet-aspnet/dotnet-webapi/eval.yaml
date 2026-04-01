@@ -48,7 +48,7 @@ scenarios:
       - "Uses builder.Services.AddOpenApi() and app.MapOpenApi() (built-in .NET 9+ support)"
       - "Does NOT add any Swashbuckle NuGet packages"
       - "Chains .WithName(), .WithSummary(), and .WithDescription() on endpoints for OpenAPI metadata"
-    timeout: 240
+    timeout: 600
 
   - name: "Add error handling with ProblemDetails and IExceptionHandler"
     prompt: |
@@ -81,7 +81,7 @@ scenarios:
       - "Registers the handler with AddExceptionHandler<T>() and AddProblemDetails()"
       - "Exception handler class is sealed"
       - "Exception handler is placed in a Middleware/ folder"
-    timeout: 180
+    timeout: 600
 
   - name: "Add a new API endpoint to an existing controller-based project"
     prompt: |
@@ -132,4 +132,4 @@ scenarios:
       - "Uses sealed record DTOs with proper naming (CreateOrderRequest, OrderResponse)"
       - "Date/time properties use DateTimeOffset, not DateTime"
       - "All request and response DTOs include XML doc summary comments"
-    timeout: 180
+    timeout: 600

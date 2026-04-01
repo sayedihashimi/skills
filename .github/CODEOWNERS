@@ -118,10 +118,6 @@
 /plugins/dotnet-template-engine/ @YuliiaKovalova @JanKrivanek
 /tests/dotnet-template-engine/ @YuliiaKovalova @JanKrivanek
 
-# dotnet-aspnet (ASP.NET Core)
-/plugins/dotnet-aspnet/ @sayedihashimi @mikekistler @JakeRadMSFT
-/tests/dotnet-aspnet/ @sayedihashimi @mikekistler @JakeRadMSFT
-
 # dotnet-nuget (package and dependency management)
 /plugins/dotnet-nuget/ @dotnet/area-infrastructure-libraries @kartheekp-ms
 /tests/dotnet-nuget/ @dotnet/area-infrastructure-libraries @kartheekp-ms
