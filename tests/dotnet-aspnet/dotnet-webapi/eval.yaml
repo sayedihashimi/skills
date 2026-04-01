@@ -1,13 +1,17 @@
 scenarios:
-  - name: "Create a CRUD Web API with minimal APIs and proper HTTP semantics"
+  - name: "Create a CRUD Web API with minimal APIs, OpenAPI, and proper HTTP semantics"
     prompt: |
       Create an ASP.NET Core Web API (.NET 10) project for managing products.
+      Each product has a name, price, category (an enum: Electronics, Clothing,
+      Food, Books), and a createdAt timestamp.
+
       The API should have these endpoints:
       - GET /api/products (list all)
       - GET /api/products/{id} (get by ID)
-      - POST /api/products (create a product with name and price)
+      - POST /api/products (create a product)
 
       Use an in-memory service behind an interface for data storage.
+      Add OpenAPI documentation with rich metadata on each endpoint.
     assertions:
       - type: "output_matches"
         pattern: "(MapGet|MapPost)"
@@ -15,6 +19,22 @@ scenarios:
         pattern: "(TypedResults|Results<)"
       - type: "output_matches"
         pattern: "sealed"
+      - type: "output_contains"
+        value: "DateTimeOffset"
+      - type: "output_matches"
+        pattern: "/// <summary>"
+      - type: "output_contains"
+        value: "AddOpenApi"
+      - type: "output_contains"
+        value: "MapOpenApi"
+      - type: "output_matches"
+        pattern: "(WithName|WithSummary|WithDescription)"
+      - type: "output_not_contains"
+        value: "Swashbuckle"
+      - type: "output_not_matches"
+        pattern: "(UseSwagger|UseSwaggerUI)"
+      - type: "output_contains"
+        value: "JsonStringEnumConverter"
     rubric:
       - "Uses minimal APIs (MapGet, MapPost, etc.) rather than controllers for new projects"
       - "POST endpoint returns 201 Created with a Location header, not 200 OK"
@@ -22,6 +42,12 @@ scenarios:
       - "DTOs are sealed records, not mutable classes"
       - "Uses a service layer with interfaces instead of injecting a data store directly into endpoints"
       - "CancellationToken is accepted in endpoint signatures and forwarded through all async calls"
+      - "Date/time properties use DateTimeOffset, not DateTime"
+      - "All request and response DTOs include XML doc summary comments"
+      - "Enum properties serialize as strings by default using JsonStringEnumConverter"
+      - "Uses builder.Services.AddOpenApi() and app.MapOpenApi() (built-in .NET 9+ support)"
+      - "Does NOT add any Swashbuckle NuGet packages"
+      - "Chains .WithName(), .WithSummary(), and .WithDescription() on endpoints for OpenAPI metadata"
     timeout: 240
 
   - name: "Add error handling with ProblemDetails and IExceptionHandler"
@@ -45,6 +71,8 @@ scenarios:
         value: "AddProblemDetails"
       - type: "output_contains"
         value: "UseExceptionHandler"
+      - type: "output_matches"
+        pattern: "Middleware"
     rubric:
       - "Implements IExceptionHandler (the modern .NET 8+ approach) rather than convention-based middleware"
       - "Returns ProblemDetails for all error responses (RFC 7807)"
@@ -53,51 +81,6 @@ scenarios:
       - "Registers the handler with AddExceptionHandler<T>() and AddProblemDetails()"
       - "Exception handler class is sealed"
       - "Exception handler is placed in a Middleware/ folder"
-    timeout: 180
-
-  - name: "Wire up OpenAPI with endpoint metadata on .NET 9+"
-    prompt: |
-      I have an ASP.NET Core .NET 9 minimal API with several endpoints but
-      no API documentation. Add OpenAPI support with rich metadata on each
-      endpoint. Here are my current endpoints:
-
-      ```csharp
-      app.MapGet("/api/tasks", async (ITaskService service, CancellationToken ct) =>
-          TypedResults.Ok(await service.GetAllAsync(ct)));
-
-      app.MapGet("/api/tasks/{id}", async Task<Results<Ok<TaskResponse>, NotFound>> (
-          int id, ITaskService service, CancellationToken ct) =>
-      {
-          var task = await service.GetByIdAsync(id, ct);
-          return task is null ? TypedResults.NotFound() : TypedResults.Ok(task);
-      });
-
-      app.MapPost("/api/tasks", async (CreateTaskRequest request,
-          ITaskService service, CancellationToken ct) =>
-      {
-          var created = await service.CreateAsync(request, ct);
-          return TypedResults.Created($"/api/tasks/{created.Id}", created);
-      });
-      ```
-
-      Show me how to add OpenAPI documentation.
-    assertions:
-      - type: "output_contains"
-        value: "AddOpenApi"
-      - type: "output_contains"
-        value: "MapOpenApi"
-      - type: "output_matches"
-        pattern: "(WithName|WithSummary|WithDescription)"
-      - type: "output_not_contains"
-        value: "Swashbuckle"
-      - type: "output_not_matches"
-        pattern: "(UseSwagger|UseSwaggerUI)"
-    rubric:
-      - "Uses builder.Services.AddOpenApi() and app.MapOpenApi() (built-in .NET 9+ support)"
-      - "Does NOT add any Swashbuckle NuGet packages"
-      - "Chains .WithName(), .WithSummary(), and .WithDescription() on endpoints"
-      - "Uses .Produces<T>() and .ProducesValidationProblem() for response type metadata"
-      - "Configures enum serialization as strings with JsonStringEnumConverter"
     timeout: 180
 
   - name: "Add a new API endpoint to an existing controller-based project"
@@ -126,7 +109,9 @@ scenarios:
       ```
 
       Add a new OrdersController with a GET endpoint to list orders and a
-      POST endpoint to create an order.
+      POST endpoint to create an order. Each order has a customer ID, a
+      placedAt timestamp, a total amount, and an OrderStatus (Pending,
+      Processing, Shipped, Delivered, Cancelled).
     assertions:
       - type: "output_contains"
         value: "ControllerBase"
@@ -136,9 +121,15 @@ scenarios:
         value: "CancellationToken"
       - type: "output_not_matches"
         pattern: "(MapGet|MapPost|app\\.Map)"
+      - type: "output_contains"
+        value: "DateTimeOffset"
+      - type: "output_matches"
+        pattern: "/// <summary>"
     rubric:
       - "Continues with the controller pattern since the existing project uses controllers (does not mix minimal APIs)"
       - "Includes CancellationToken in all endpoint signatures"
       - "POST create returns CreatedAtAction with 201 status, not Ok with 200"
       - "Uses sealed record DTOs with proper naming (CreateOrderRequest, OrderResponse)"
+      - "Date/time properties use DateTimeOffset, not DateTime"
+      - "All request and response DTOs include XML doc summary comments"
     timeout: 180
