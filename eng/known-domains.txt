@@ -57,6 +57,9 @@ github.com/open-telemetry/semantic-conventions
 github.com/yourusername
 github.com/username
 
+# Test smell research
+testsmells.org
+
 # Community
 ollama.com
 stackoverflow.com
