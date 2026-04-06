@@ -120,7 +120,7 @@ scenarios:
       - type: "output_contains"
         value: "CancellationToken"
       - type: "output_not_matches"
-        pattern: "(MapGet|MapPost|app\\.Map)"
+        pattern: "app\\.(MapGet|MapPost|MapPut|MapDelete|MapPatch)|\\b(MapGet|MapPost|MapPut|MapDelete|MapPatch)\\b"
       - type: "output_contains"
         value: "DateTimeOffset"
       - type: "output_matches"
