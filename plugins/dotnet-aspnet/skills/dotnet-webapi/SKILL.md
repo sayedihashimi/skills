@@ -63,7 +63,23 @@ conversions, and serializes to ISO 8601 with offset information in JSON — whic
 is what API consumers expect.
 
 Reference: https://learn.microsoft.com/en-us/dotnet/api/system.datetimeoffset
+**JSON Serialization options -- use strict conventions:** Configure JSON serialization
+to apply strict serialization/deserialization rules to minimize the potential of processing
+malicious requests.
 
+\`\`\`csharp
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    // disallow reading numbers from JSON strings
+    options.SerializerOptions.NumberHandling = JsonNumberHandling.Strict;
+    // match properties with exact casing during deserialization
+    options.SerializerOptions.PropertyNameCaseInsensitive = false;
+    // reject duplicate JSON property names during deserialization
+    options.SerializerOptions.AllowDuplicateProperties = false;
+    // omit null properties from serialized output
+    options.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+});
+\`\`\`
 **Enum properties — serialize as strings by default:** Unless the user
 explicitly requests integer serialization, all enum properties should be
 serialized as strings. String-serialized enums are human-readable, less fragile
