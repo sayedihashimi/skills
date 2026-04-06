@@ -281,6 +281,8 @@ internal sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger)
         if (statusCode == 0)
             return false; // Let the default handler deal with it
 
+        // Important: returning true below suppresses the exception diagnostics middleware
+        // for this exception, so ensure it is logged/telemetrized before returning.
         logger.LogWarning(exception, "Handled API exception: {Title}", title);
 
         httpContext.Response.StatusCode = statusCode;
