@@ -228,11 +228,20 @@ app.MapGet("/api/products/{id}", handler)
 **Enum serialization (strings by default):** Configure JSON serialization so
 enums appear as readable strings in both API responses and OpenAPI schemas.
 Always add this configuration unless the user explicitly requests integer
-enum serialization:
+enum serialization. Configure it for both minimal APIs and controllers, as
+they use different option types:
 
 ```csharp
+// Minimal APIs
 builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+
+// Controllers / MVC
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 ```
 
 ### Step 5: Set up error handling
