@@ -71,8 +71,6 @@ scenarios:
         value: "AddProblemDetails"
       - type: "output_contains"
         value: "UseExceptionHandler"
-      - type: "output_matches"
-        pattern: "Middleware"
     rubric:
       - "Implements IExceptionHandler (the modern .NET 8+ approach) rather than convention-based middleware"
       - "Returns ProblemDetails for all error responses (RFC 7807)"
