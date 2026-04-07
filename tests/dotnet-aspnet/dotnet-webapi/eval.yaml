@@ -35,6 +35,8 @@ scenarios:
         pattern: "(UseSwagger|UseSwaggerUI)"
       - type: "output_contains"
         value: "JsonStringEnumConverter"
+      - type: "output_contains"
+        value: "CancellationToken"
     rubric:
       - "Uses minimal APIs (MapGet, MapPost, etc.) rather than controllers for new projects"
       - "POST endpoint returns 201 Created with a Location header, not 200 OK"

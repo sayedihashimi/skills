@@ -6,9 +6,9 @@ description: >
   USE FOR: adding new API endpoints (controllers or minimal APIs), wiring up
   OpenAPI/Swagger, creating .http test files, setting up global error handling
   middleware.
-  DO NOT USE FOR: general C# coding style (use dotnet-csharp), EF Core data
-  access or query optimization (use optimizing-ef-core-queries), frontend/Blazor
-  work, gRPC services, or SignalR hubs.
+  DO NOT USE FOR: general C# coding style, EF Core data access or query
+  optimization (use optimizing-ef-core-queries), frontend/Blazor work, gRPC
+  services, or SignalR hubs.
 ---
 
 # ASP.NET Core Web API
@@ -63,11 +63,17 @@ conversions, and serializes to ISO 8601 with offset information in JSON — whic
 is what API consumers expect.
 
 Reference: https://learn.microsoft.com/en-us/dotnet/api/system.datetimeoffset
-**JSON Serialization options -- use strict conventions:** Configure JSON serialization
-to apply strict serialization/deserialization rules to minimize the potential of processing
-malicious requests.
+**JSON serialization options — preserve existing behavior by default:** For
+existing APIs, do **not** introduce stricter serialization/deserialization settings
+unless the project already uses them or the user explicitly asks for them. Settings
+such as case-sensitive property matching and strict number handling can break
+existing clients. For **new projects**, or when strict JSON handling is explicitly
+requested, configure options like the following to minimize the potential of
+processing malicious requests:
 
-\`\`\`csharp
+```csharp
+// Apply these settings only for new projects, when the existing project already
+// uses them, or when the user explicitly requests stricter JSON behavior.
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
     // disallow reading numbers from JSON strings
@@ -79,7 +85,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     // omit null properties from serialized output
     options.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
 });
-\`\`\`
+```
 **Enum properties — serialize as strings by default:** Unless the user
 explicitly requests integer serialization, all enum properties should be
 serialized as strings. String-serialized enums are human-readable, less fragile
@@ -94,7 +100,7 @@ public sealed record ProductResponse(
     int Id,
     string Name,
     decimal Price,
-    string CategoryName,
+    Category Category,
     bool IsAvailable,
     DateTimeOffset CreatedAt);
 ```
@@ -112,7 +118,7 @@ public sealed record CreateProductRequest
     [Range(0.01, 999999.99)]
     public required decimal Price { get; init; }
 
-    public required int CategoryId { get; init; }
+    public required Category Category { get; init; }
 }
 ```
 
@@ -290,7 +296,9 @@ internal sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger)
         {
             Status = statusCode,
             Title = title,
-            Detail = exception.Message,
+            // Do not use exception.Message here — it may leak sensitive internal details.
+            // Use a safe, user-facing message instead.
+            Detail = title,
             Instance = httpContext.Request.Path
         }, cancellationToken);
 
@@ -369,7 +377,7 @@ Content-Type: application/json
 {
   "name": "Wireless Mouse",
   "price": 29.99,
-  "categoryId": 1
+  "category": "Electronics"
 }
 
 ### Delete a product
