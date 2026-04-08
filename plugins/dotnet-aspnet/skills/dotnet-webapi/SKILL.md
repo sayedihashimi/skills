@@ -16,6 +16,41 @@ description: >
 Produce well-structured ASP.NET Core Web API endpoints with proper HTTP
 semantics, OpenAPI documentation, and error handling.
 
+## When to Use
+
+Use this skill when working on ASP.NET Core HTTP APIs, including:
+
+- adding or modifying Web API endpoints implemented with controllers or minimal APIs;
+- wiring up OpenAPI/Swagger metadata and endpoint documentation;
+- defining request/response DTOs and consistent HTTP status code behavior;
+- adding `.http` files or similar request-based API testing artifacts;
+- configuring centralized API error handling middleware or exception mapping.
+
+## When Not to Use
+
+Do not use this skill for:
+
+- general C# coding style or non-API refactoring;
+- EF Core data modeling or query optimization work; use `optimizing-ef-core-queries`;
+- frontend, Razor, or Blazor UI changes;
+- gRPC services;
+- SignalR hubs or real-time messaging flows.
+
+## Inputs / prerequisites
+
+Before applying this skill, gather the project context needed to match the
+existing API style and wiring:
+
+- the ASP.NET Core entry point, typically `Program.cs`;
+- any existing controllers, especially classes inheriting `ControllerBase` or
+  using `[ApiController]`;
+- any existing minimal API registrations such as `app.MapGet`, `app.MapPost`,
+  `app.MapPut`, or `app.MapDelete`;
+- related DTO, model, validation, and error-handling types already used by the project;
+- available build, run, and test commands so changes can be verified.
+
+If the user asks for a new endpoint, inspect the current project structure first
+so the implementation follows the established conventions rather than mixing styles.
 ## Workflow
 
 ### Step 1: Determine the API style
