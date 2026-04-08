@@ -1,11 +1,11 @@
 ---
 name: test-anti-patterns
-description: "Detects anti-patterns and code smells in .NET test suites. Use when the user asks to review test quality, find test smells, identify flaky test indicators, or audit tests for common mistakes. Covers assertion quality, test isolation, naming, flakiness indicators, over-mocking, and structural problems. Works with MSTest, xUnit, NUnit, and TUnit."
+description: "Quick pragmatic review of .NET test code for anti-patterns that undermine reliability and diagnostic value. Use when asked to review tests, find test problems, check test quality, or audit tests for common mistakes. Catches assertion gaps, flakiness indicators, over-mocking, naming issues, and structural problems with actionable fixes. Use for periodic test code reviews and PR feedback. For a deep formal audit based on academic test smell taxonomy, use exp-test-smell-detection instead. Works with MSTest, xUnit, NUnit, and TUnit."
 ---
 
 # Test Anti-Pattern Detection
 
-Analyze .NET test code for anti-patterns, code smells, and quality issues that undermine test reliability, maintainability, and diagnostic value.
+Quick, pragmatic analysis of .NET test code for anti-patterns and quality issues that undermine test reliability, maintainability, and diagnostic value.
 
 ## When to Use
 
@@ -21,6 +21,7 @@ Analyze .NET test code for anti-patterns, code smells, and quality issues that u
 - User wants to run or execute tests (use `run-tests`)
 - User wants to migrate between test frameworks or versions (use migration skills)
 - User wants to measure code coverage (out of scope)
+- User wants a deep formal test smell audit with academic taxonomy and extended catalog (use `exp-test-smell-detection`)
 
 ## Inputs
 
@@ -34,7 +35,7 @@ Analyze .NET test code for anti-patterns, code smells, and quality issues that u
 
 ### Step 1: Gather the test code
 
-Read the test files the user wants reviewed. If the user points to a directory or project, scan for all test files (files containing `[TestClass]`, `[TestMethod]`, `[Fact]`, `[Test]`, or `[Theory]` attributes).
+Read the test files the user wants reviewed. If the user points to a directory or project, scan for all test files using the framework-specific markers in the `dotnet-test-frameworks` skill (e.g., `[TestClass]`, `[Fact]`, `[Test]`).
 
 If production code is available, read it too -- this is critical for detecting tests that are coupled to implementation details rather than behavior.
 
@@ -58,7 +59,7 @@ Check each test file against the anti-pattern catalog below. Report findings gro
 |---|---|
 | **Flakiness indicators** | `Thread.Sleep(...)`, `Task.Delay(...)` for synchronization, `DateTime.Now`/`DateTime.UtcNow` without abstraction, `Random` without a seed, environment-dependent paths. |
 | **Test ordering dependency** | Static mutable fields modified across tests, `[TestInitialize]` that doesn't fully reset state, tests that fail when run individually but pass in suite (or vice versa). |
-| **Over-mocking** | More mock setup lines than actual test logic. Verifying exact call sequences on mocks rather than outcomes. Mocking types the test owns. |
+| **Over-mocking** | More mock setup lines than actual test logic. Verifying exact call sequences on mocks rather than outcomes. Mocking types the test owns. For a deep mock audit, use `exp-mock-usage-analysis`. |
 | **Implementation coupling** | Testing private methods via reflection, asserting on internal state, verifying exact method call counts on collaborators instead of observable behavior. |
 | **Broad exception assertions** | `Assert.ThrowsException<Exception>(...)` instead of the specific exception type. Also: `[ExpectedException(typeof(Exception))]`. |
 
@@ -68,7 +69,7 @@ Check each test file against the anti-pattern catalog below. Report findings gro
 |---|---|
 | **Poor naming** | Test names like `Test1`, `TestMethod`, names that don't describe the scenario or expected outcome. Good: `Add_NegativeNumber_ThrowsArgumentException`. |
 | **Magic values** | Unexplained numbers or strings in arrange/assert: `Assert.AreEqual(42, result)` -- what does 42 mean? |
-| **Duplicate tests** | Three or more test methods with near-identical bodies that differ only in a single input value. Should be data-driven (`[DataRow]`, `[Theory]`, `[TestCase]`). Note: Two tests covering distinct boundary conditions (e.g., zero vs. negative) are NOT duplicates -- separate tests for different edge cases provide clearer failure diagnostics and are a valid practice. |
+| **Duplicate tests** | Three or more test methods with near-identical bodies that differ only in a single input value. Should be data-driven (`[DataRow]`, `[Theory]`, `[TestCase]`). For a detailed duplication analysis, use `exp-test-maintainability`. Note: Two tests covering distinct boundary conditions (e.g., zero vs. negative) are NOT duplicates -- separate tests for different edge cases provide clearer failure diagnostics and are a valid practice. |
 | **Giant tests** | Test methods exceeding ~30 lines or testing multiple behaviors at once. Hard to diagnose when they fail. |
 | **Assertion messages that repeat the assertion** | `Assert.AreEqual(expected, actual, "Expected and actual are not equal")` adds no information. Messages should describe the business meaning. |
 | **Missing AAA separation** | Arrange, Act, Assert phases are interleaved or indistinguishable. |
