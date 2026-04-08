@@ -134,6 +134,19 @@ immutability that records provide.
 Whether using controllers or minimal APIs, follow these HTTP conventions
 consistently.
 
+**Organizing minimal API endpoints:** For projects using minimal APIs, organize
+endpoints by resource using static classes with a static `Map<Resource>` method.
+This pattern keeps endpoint definitions grouped by resource type, making the
+code more maintainable and easier to navigate as the API grows.
+
+**Pattern structure:**
+
+1. Create one static class per resource (e.g., `ProductEndpoints`, `CategoryEndpoints`).
+2. Define a static `Map<Resource>(this WebApplication app)` extension method.
+3. Inside the method, call `MapGet`, `MapPost`, `MapPut`, `MapDelete`, etc. for
+   that resource's endpoints.
+4. In `Program.cs`, call each resource's `Map` method in order.
+
 **Minimal API return types — prefer `TypedResults`:**
 
 Always prefer `TypedResults` over the `Results` factory. `TypedResults` embeds
