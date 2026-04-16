@@ -151,7 +151,7 @@ var r = new Regex(@"^\w+$", RegexOptions.NonBacktracking);
 **Impact: Can hang process indefinitely on crafted input.**
 
 ### Use TryGetValue Instead of ContainsKey + Indexer
-🔴 **DO** | .NET Core+
+🟡 **DO** | .NET Core+
 
 ❌
 ```csharp
@@ -163,7 +163,7 @@ if (dict.ContainsKey(key))
 if (dict.TryGetValue(key, out var value))
     Use(value);
 ```
-**Impact: ~2x faster (50% reduction in lookup time).**
+**Impact: ~2x faster (50% reduction in lookup time). Treat as 🔴 only when this is in a proven top hot path with very high call frequency.**
 
 ### Avoid LINQ in Hot Paths
 🔴 **AVOID** | .NET Core+

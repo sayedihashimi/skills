@@ -196,6 +196,15 @@ grep -rn --include='*.cs' 'StringComparer.CurrentCulture' --exclude-dir=bin --ex
 
 # LINQ chains in extension/hot-path files (.Select, .Where, .Cast, .Take, .Aggregate)
 grep -rn --include='*.cs' -E '\.(Select|Where|Cast|Take|Aggregate)\(' --exclude-dir=bin --exclude-dir=obj . | wc -l
+
+# Sliding-window materialization (Skip/Take/ToList in loops)
+grep -rn --include='*.cs' -E '\.Skip\([^)]*\)\.Take\([^)]*\)\.ToList\(' --exclude-dir=bin --exclude-dir=obj . | wc -l
+
+# Dedup materialization (.Distinct().ToList())
+grep -rn --include='*.cs' -E '\.Distinct\(\)\.ToList\(' --exclude-dir=bin --exclude-dir=obj . | wc -l
+
+# Key-union allocation pattern (Keys.ToList + Contains in diff/merge code)
+grep -rn --include='*.cs' -E 'Keys\.ToList\(|\.Contains\(' --exclude-dir=bin --exclude-dir=obj . | wc -l
 ```
 
 For the LINQ chain recipe: any hit in a file whose name ends in `Extensions.cs`, `Formatter.cs`, or implements a method called from a public extension method is a hot-path candidate. Inspect each hit in these files and flag LINQ chains that allocate delegates, enumerators, or intermediate collections on every call. Hits in localization converters or one-time initialization are lower priority.
@@ -204,4 +213,6 @@ For the LINQ chain recipe: any hit in a file whose name ends in `Extensions.cs`,
 
 - **ContainsKey + indexer double-lookup**: Requires verifying the same key is used in a subsequent indexer access — multi-line/multi-statement context
 - **LINQ on hot paths**: The LINQ chain recipe above catches call sites, but distinguishing hot-path from cold-path requires context. Prioritize hits in `*Extensions.cs` and `*Formatter.cs` files, which are typically called on every user invocation
+- **Sliding windows (`Skip().Take().ToList()`)**: In loops, this often re-enumerates and allocates per iteration; suggest indexed loops or span/window iterators
+- **`Distinct().ToList()`**: For repeated membership checks, prefer `HashSet<T>` once and reuse; for one-time output, classify lower unless in hot path
 - **`new Dictionary/List<` in method bodies vs fields**: The grep heuristic (`grep -v 'static\|readonly'`) catches most cases but may include false positives from field initializers without `static`/`readonly` — spot-check flagged lines

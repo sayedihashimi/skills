@@ -117,8 +117,12 @@ grep -rn --include='*.cs' 'new HttpClient(' --exclude-dir=bin --exclude-dir=obj 
 
 # new JsonSerializerOptions() not cached (592x slower in .NET 6)
 grep -rn --include='*.cs' 'new JsonSerializerOptions' --exclude-dir=bin --exclude-dir=obj . | grep -v 'static\|readonly' | wc -l
+
+# Potential full-deserialization hot paths
+grep -rn --include='*.cs' -E 'JsonSerializer\.Deserialize<|JsonDocument\.Parse\(' --exclude-dir=bin --exclude-dir=obj . | wc -l
 ```
 
 ### Patterns Requiring Manual Review
 
 - **`JsonSerializer.Serialize/Deserialize` without source-gen context**: Can't determine from grep if a context parameter is passed
+- **Full deserialization where partial parse is enough**: For paths that only read 1-2 fields (logging/pretty-print/diff/validation), prefer `Utf8JsonReader` or `JsonDocument` property-level access over full object materialization

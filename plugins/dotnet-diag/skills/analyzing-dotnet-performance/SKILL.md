@@ -61,9 +61,9 @@ Always check structural patterns (unsealed classes) regardless of signals.
 
 ### Step 3: Scan and Report
 
-**For files under 500 lines, read the entire file first** — you'll spot most patterns faster than running individual grep recipes. Use grep to confirm counts and catch patterns you might miss visually.
+For each relevant pattern category, run targeted detection recipes and report exact counts.
 
-For each relevant pattern category, run the detection recipes below. Report exact counts, not estimates.
+Prefer targeted searches first; only read entire files when a pattern requires multi-line/manual confirmation.
 
 **Core scan recipes** (run these when reference files aren't available):
 ```
@@ -93,10 +93,10 @@ grep -n ': IEquatable' FILE                    # Positive: struct equality
 ```
 
 **Rules:**
-- Run every relevant recipe for the detected pattern categories
-- **Emit a scan execution checklist** before classifying findings — list each recipe and the hit count
+- Run relevant recipes for detected pattern categories
+- Emit a **compact scan checklist** (one line per category with aggregated counts), not a full command-by-command dump
 - A result of **0 hits** is valid and valuable (confirms good practice)
-- If reference files were loaded, also run their `## Detection` recipes
+- If reference files were loaded, prioritize their highest-signal recipes; include lower-signal recipes only when needed to confirm ambiguous findings
 
 **Verify-the-Inverse Rule:** For absence patterns, always count both sides and report the ratio (e.g., "N of M classes are sealed"). The ratio determines severity — 0/185 is systematic, 12/15 is a consistency fix.
 
@@ -124,9 +124,10 @@ Assign each finding a severity:
 | ℹ️ **Info** | Pattern applies but code may not be on a hot path | Consider if profiling shows impact |
 
 **Prioritization rules:**
-1. If the user identified hot-path code, elevate all findings in that code to their maximum severity
+1. If the user identified hot-path code, elevate findings in that code to their maximum severity
 2. If hot-path context is unknown, report 🔴 Critical findings unconditionally; report 🟡 Moderate findings with a note: _"Impactful if this code is on a hot path"_
 3. Never suggest micro-optimizations on code that is clearly not performance-sensitive
+4. Do **not** classify pure throughput micro-optimizations (~2x local speedups, e.g., `ContainsKey`+indexer → `TryGetValue`) as 🔴 unless they are in a demonstrated top hot path or have multiplicative system impact
 
 **Scale-based severity escalation:**
 When the same pattern appears across many instances, escalate severity:
@@ -157,6 +158,7 @@ Format per finding:
 - **No explanatory prose** beyond the Impact line — the severity icon already conveys urgency.
 - **Merge related findings** that share the same fix (e.g., all `.ToLower()` calls go in one finding, not split by file).
 - **Positive findings** in a bullet list, not a table. One line per pattern: `✅ Pattern — evidence`.
+- Cap output to top-impact findings per severity (default: up to 5 🔴, 8 🟡, 5 ℹ️) and summarize additional matches in one line.
 
 End with a summary table and disclaimer:
 
