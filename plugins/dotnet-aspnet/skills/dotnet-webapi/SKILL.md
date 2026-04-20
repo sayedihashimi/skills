@@ -173,7 +173,7 @@ This wires up an endpoint filter that validates parameters decorated with data
 annotations before the handler executes, returning a `400 Bad Request` with a
 validation problem details response on failure.
 
-Reference: https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/validation
+Reference: https://learn.microsoft.com/aspnet/core/fundamentals/minimal-apis?view=aspnetcore-10.0
 
 **Do not** use mutable classes (`{ get; set; }`) for DTOs. Mutable DTOs allow
 accidental modification after construction and lose the self-documenting
