@@ -160,6 +160,21 @@ public sealed record CreateProductRequest
 Follow the same pattern for `Update{Entity}Request` records, adding any
 additional properties the update requires (e.g., `IsAvailable`).
 
+**Minimal API validation — register explicitly:** Data-annotation validation
+(`[Required]`, `[MaxLength]`, `[Range]`, etc.) is automatic in MVC controllers,
+but minimal APIs require explicit opt-in. For **.NET 10+** projects using minimal
+APIs, add the validation services in `Program.cs`:
+
+```csharp
+builder.Services.AddValidation();
+```
+
+This wires up an endpoint filter that validates parameters decorated with data
+annotations before the handler executes, returning a `400 Bad Request` with a
+validation problem details response on failure.
+
+Reference: https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/validation
+
 **Do not** use mutable classes (`{ get; set; }`) for DTOs. Mutable DTOs allow
 accidental modification after construction and lose the self-documenting
 immutability that records provide.
