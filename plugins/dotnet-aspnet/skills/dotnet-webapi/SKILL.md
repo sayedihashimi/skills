@@ -203,7 +203,7 @@ different types with no common base the compiler can infer, which causes
 compiler falls back to matching `RequestDelegate(HttpContext)`.
 
 **Fallback — `Results` factory:** If a handler has many conditional branches
-(3+ result types), you may use the `Results` factory (`Results.Ok()`,
+(7+ result types), you may use the `Results` factory (`Results.Ok()`,
 `Results.NotFound()`) which returns `IResult`, sacrificing compile-time OpenAPI
 inference for simpler signatures.
 
